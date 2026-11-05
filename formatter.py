@@ -62,7 +62,9 @@ def fmt_listing(l: dict) -> str:
 
 
 def fmt_settings(s: dict) -> str:
-    rooms = {"any": "любое", "0": "студия", "1": "1", "2": "2", "3": "3+"}[s["rooms"]]
+    names = {"0": "студия", "1": "1", "2": "2", "3": "3+"}
+    chosen = [names[x] for x in s["rooms"].split(",") if x in names]
+    rooms = ", ".join(chosen) if chosen else "любое"
     pmin, pmax = int(s["pmin"]), int(s["pmax"])
     price = "любая" if not pmin and not pmax else (f"от ${pmin:,}".replace(",", " ") if not pmax else
             f"${pmin:,} – ${pmax:,}".replace(",", " ") if pmin else f"до ${pmax:,}".replace(",", " "))

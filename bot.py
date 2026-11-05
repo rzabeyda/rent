@@ -69,7 +69,10 @@ def kb_settings() -> InlineKeyboardMarkup:
 def kb_option(key: str, s: dict) -> InlineKeyboardMarkup:
     row = []
     for label, val in OPTIONS[key][1]:
-        tick = "✅ " if s[key] == val else ""
+        on = (val in s[key].split(",") if s[key] != "any" else False) if key == "rooms" else s[key] == val
+        if key == "rooms" and val == "any":
+            on = s[key] == "any"
+        tick = "✅ " if on else ""
         row.append(InlineKeyboardButton(f"{tick}{label}", callback_data=f"s:{key}:{val}"))
     rows = [row[i:i + 3] for i in range(0, len(row), 3)]
     rows.append([InlineKeyboardButton("◀️ Назад", callback_data="m:back")])
@@ -248,7 +251,17 @@ async def on_callback(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     s = db.get_settings(chat_id)
     kb = None
     if parts[0] == "s":
-        db.set_setting(chat_id, parts[1], parts[2])
+        if parts[1] == "rooms":   # можно выбрать несколько вариантов
+            cur = [x for x in s["rooms"].split(",") if x and x != "any"]
+            if parts[2] == "any":
+                cur = []
+            elif parts[2] in cur:
+                cur.remove(parts[2])
+            else:
+                cur.append(parts[2])
+            db.set_setting(chat_id, "rooms", ",".join(sorted(cur)) or "any")
+        else:
+            db.set_setting(chat_id, parts[1], parts[2])
         if parts[1] == "deal":
             db.set_setting(chat_id, "pmin", 0)
             db.set_setting(chat_id, "pmax", 0)   # диапазоны цен у аренды и покупки разные

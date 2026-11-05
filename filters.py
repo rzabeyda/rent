@@ -13,7 +13,7 @@ def passes(l: dict, s: dict) -> bool:
         r = l["rooms"]
         if r is None:
             return False
-        want = int(s["rooms"])
-        if (want >= 3 and r < 3) or (want < 3 and r != want):
+        wanted = [int(x) for x in s["rooms"].split(",") if x.isdigit()]
+        if wanted and not any((r >= 3) if w >= 3 else (r == w) for w in wanted):
             return False
     return True
