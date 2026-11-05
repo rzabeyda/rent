@@ -148,6 +148,27 @@ async def deliver(bot, chat_id: int, items: list) -> int:
     return n
 
 
+RELAX_STEPS = [
+    ({"prices": "any"}, "цену"),
+    ({"prices": "any", "rooms": "any"}, "цену и комнаты"),
+    ({"prices": "any", "rooms": "any", "age": "120"}, "цену, комнаты и давность"),
+    ({"prices": "any", "rooms": "any", "age": "120", "city": "all"}, "цену, комнаты, давность и город"),
+]
+
+
+async def relaxed_search(bot, chat_id: int, s: dict):
+    """По точным фильтрам пусто — показываем ближайшее и говорим, что пришлось ослабить."""
+    for patch, label in RELAX_STEPS:
+        items = pick_for_user(chat_id, {**s, **patch}, only_new=False)
+        if items:
+            await bot.send_message(
+                chat_id, f"😕 По вашим фильтрам ничего нет. Я убрал {label} — вот ближайшее "
+                         f"({min(len(items), 5)} из {len(items)}):")
+            await deliver(bot, chat_id, items[:5])
+            return
+    await bot.send_message(chat_id, "😕 Сейчас в базе нет объявлений такого типа. Попробуйте сменить «Тип».")
+
+
 async def do_search(bot, chat_id: int):
     if chat_id in _searching:
         return
@@ -160,7 +181,7 @@ async def do_search(bot, chat_id: int):
         if items:
             await deliver(bot, chat_id, items)
         else:
-            await bot.send_message(chat_id, "😕 Сейчас ничего не найдено. Попробуйте расширить фильтры.")
+            await relaxed_search(bot, chat_id, s)
     except Forbidden:
         db.set_active(chat_id, False)
     except Exception:
