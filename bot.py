@@ -132,7 +132,10 @@ def pick_for_user(chat_id: int, s: dict, only_new: bool) -> list:
         if l["hash"] not in seen:
             seen.add(l["hash"])
             out.append(l)
-    return out
+    priced = [l for l in out if l["price_usd"] is not None]
+    if len(priced) >= 10:                # хватает объявлений с ценой — без цены не показываем
+        return priced
+    return priced + [l for l in out if l["price_usd"] is None]   # иначе с ценой первыми
 
 
 async def deliver(bot, chat_id: int, items: list) -> int:

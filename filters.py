@@ -11,7 +11,9 @@ def passes(l: dict, s: dict) -> bool:
     if s["city"] != "all" and l["city"] != s["city"]:
         return False
     price = l["price_usd"]
-    if price is not None and s["prices"] != "any":
+    if price is None:
+        return False                      # без цены не присылаем
+    if s["prices"] != "any":
         presets = PRICE_PRESETS.get(deal, [])
         ranges = [presets[int(i)][1:] for i in s["prices"].split(",") if i.isdigit() and int(i) < len(presets)]
         if ranges and not any(price >= a and (not z or price <= z) for a, z in ranges):
