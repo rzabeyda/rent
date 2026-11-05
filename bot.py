@@ -42,6 +42,7 @@ log = logging.getLogger("rent")
 
 _searching: set = set()
 _tasks: list = []
+_prian_t = 0.0
 
 
 # ══════════ клавиатуры ═══════════════════════════════════════════
@@ -178,6 +179,13 @@ async def scrape_once(pages: int = 1):
         except Exception as e:
             log.warning("scrape %s failed: %s", name, e)
         await asyncio.sleep(1)
+    global _prian_t
+    if time.time() - _prian_t > 3 * 3600:      # сайт опрашиваем редко и аккуратно
+        _prian_t = time.time()
+        try:
+            total += db.save_listings(await asyncio.to_thread(sources.fetch_prian))
+        except Exception as e:
+            log.warning("prian failed: %s", e)
     try:
         total += db.save_listings(await tg_user.fetch())
     except Exception as e:

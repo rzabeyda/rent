@@ -59,3 +59,38 @@ def channel_exists(name: str) -> bool:
         return r.status_code == 200 and "tgme_widget_message_wrap" in r.text
     except requests.RequestException:
         return False
+
+
+# ── Prian.ru: продажа недвижимости в Египте (без защиты от ботов) ──────────
+PRIAN_PAGES = ["https://prian.ru/egypt/hurghada/", "https://prian.ru/egypt/hurghada/?page=2",
+               "https://prian.ru/egypt/sharm_el_sheikh/"]
+RX_PRIAN = re.compile(r'<a href="//prian\.ru/price/(egypt-[\d-]+)\.html" title="([^"]+)"')
+RX_PRIAN_IMG = re.compile(r'<img src="(https://img\.prian\.ru/c/(?:4|6)\d\d[^"]+)"')
+
+
+def fetch_prian() -> list:
+    from datetime import datetime, timezone
+    out, seen = [], set()
+    now = datetime.now(timezone.utc).isoformat()
+    for url in PRIAN_PAGES:
+        try:
+            r = requests.get(url, headers=UA, timeout=25)
+        except requests.RequestException:
+            continue
+        if r.status_code != 200:
+            continue
+        for m in RX_PRIAN.finditer(r.text):
+            pid, title = m.groups()
+            im = RX_PRIAN_IMG.search(r.text, m.end(), m.end() + 3000)
+            img = im.group(1) if im else None
+            if pid in seen:
+                continue
+            seen.add(pid)
+            title = html.unescape(title)
+            info = P.parse(title + ". Продажа", "")
+            if not info or info["price_usd"] is None:
+                continue
+            info["deal"] = "sale"
+            out.append({"id": f"prian/{pid}", "source": "prian.ru", "text": title,
+                        "url": f"https://prian.ru/price/{pid}.html", "ts": now, "photo": img, **info})
+    return out
