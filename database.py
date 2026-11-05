@@ -17,6 +17,8 @@ DEFAULTS = {
     "age": "7",           # дней
     "interval": "360",    # минут между уведомлениями
     "noprice": "1",       # показывать объявления без цены
+    "amin": "0",          # площадь, м², 0 = без ограничения
+    "amax": "0",
 }
 
 
@@ -37,6 +39,9 @@ def init_db():
         CREATE TABLE IF NOT EXISTS sent(chat_id INTEGER, id TEXT, hash TEXT, PRIMARY KEY(chat_id, id));
         CREATE INDEX IF NOT EXISTS idx_sent_hash ON sent(chat_id, hash);
         """)
+        cols = [r["name"] for r in _conn.execute("PRAGMA table_info(listings)")]
+        if "area" not in cols:
+            _conn.execute("ALTER TABLE listings ADD COLUMN area INTEGER")
         if not _conn.execute("SELECT 1 FROM channels LIMIT 1").fetchone():
             _conn.executemany("INSERT OR IGNORE INTO channels(name, city) VALUES(?,?)", config.DEFAULT_CHANNELS)
         _conn.commit()
@@ -119,10 +124,11 @@ def save_listings(items) -> int:
     with _lock:
         for l in items:
             cur = _conn.execute(
-                "INSERT OR IGNORE INTO listings(id,source,text,url,ts,photo,deal,city,price_orig,cur,period,price_usd,rooms,hash,added)"
-                " VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+                "INSERT OR IGNORE INTO listings(id,source,text,url,ts,photo,deal,city,price_orig,cur,period,price_usd,rooms,area,hash,added)"
+                " VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
                 (l["id"], l["source"], l["text"], l["url"], l["ts"], l["photo"], l["deal"], l["city"],
-                 l["price_orig"], l["cur"], l["period"], l["price_usd"], l["rooms"], l["hash"], time.time()))
+                 l["price_orig"], l["cur"], l["period"], l["price_usd"], l["rooms"], l["area"], l["hash"],
+                 time.time()))
             new += cur.rowcount
         _conn.commit()
     return new

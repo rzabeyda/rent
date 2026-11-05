@@ -94,6 +94,18 @@ def find_rooms(text: str):
     return None
 
 
+RX_AREA = re.compile(r"(\d{2,4}(?:[.,]\d+)?)\s*(?:м²|м2|кв\.?\s*м|m²|m2|sqm|sq\.?\s*m)", re.I)
+RX_AREA2 = re.compile(r"(?:площадь|area|size)\s*[:\-—]?\s*(\d{2,4}(?:[.,]\d+)?)", re.I)
+
+
+def find_area(text: str):
+    m = RX_AREA.search(text) or RX_AREA2.search(text)
+    if not m:
+        return None
+    v = float(m.group(1).replace(",", "."))
+    return round(v) if 10 <= v <= 2000 else None
+
+
 def parse(text: str, city_hint: str = ""):
     rent = bool(RX_RENT.search(text))
     sale = bool(RX_SALE.search(text))
@@ -116,5 +128,6 @@ def parse(text: str, city_hint: str = ""):
         "period": price[2] if price else None,
         "price_usd": price[3] if price else None,
         "rooms": find_rooms(text),
+        "area": find_area(text),
         "hash": hashlib.md5(re.sub(r"\W+", "", text.lower())[:300].encode()).hexdigest(),
     }

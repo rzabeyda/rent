@@ -15,6 +15,9 @@ PRICE_PRESETS = {
 }
 
 
+AREA_PRESETS = [("до 40", 0, 40), ("40–70", 40, 70), ("70–100", 70, 100), ("100+", 100, 0), ("Любая", 0, 0)]
+
+
 def money(v: float, cur: str) -> str:
     n = f"{v:,.0f}".replace(",", " ")
     return f"{SYM[cur]}{n}" if cur != "EGP" else f"{n} EGP"
@@ -52,6 +55,8 @@ def fmt_listing(l: dict) -> str:
     head = f"🏠 <b>{DEAL.get(l['deal'], 'Объявление')}</b> · {CITY.get(l['city'], 'Египет')}"
     if l["rooms"] is not None:
         head += " · " + ("студия" if l["rooms"] == 0 else f"🛏 {l['rooms']}")
+    if l.get("area"):
+        head += f" · 📐 {l['area']} м²"
     body = re.sub(r"\n{2,}", "\n", l["text"]).strip()
     if len(body) > 420:
         body = body[:420].rsplit(" ", 1)[0] + "…"
@@ -66,13 +71,17 @@ def fmt_settings(s: dict) -> str:
             f"${pmin:,} – ${pmax:,}".replace(",", " ") if pmin else f"до ${pmax:,}".replace(",", " "))
     iv = int(s["interval"])
     interval = f"{iv // 60} ч" if iv >= 60 else f"{iv} мин"
+    amin, amax = int(s["amin"]), int(s["amax"])
+    area = "любая" if not amin and not amax else (f"от {amin} м²" if not amax else
+           f"{amin}–{amax} м²" if amin else f"до {amax} м²")
     return (
         "⚙️ <b>Настройки фильтров</b>\n\n"
-        f"🏷 Тип: <b>{DEAL[s['deal']]}</b>\n"
-        f"📍 Город: <b>{CITY[s['city']]}</b>\n"
+        f"⏱ Интервал: <b>{interval}</b>\n"
+        f"🕒 Давность: <b>{s['age']} дн.</b>\n"
         f"💰 Цена: <b>{price}</b>\n"
         f"🛏 Комнат: <b>{rooms}</b>\n"
-        f"🕒 Объявления за: <b>{s['age']} дн.</b>\n"
-        f"⏱ Частота уведомлений: <b>{interval}</b>\n"
+        f"📐 Площадь: <b>{area}</b>\n"
+        f"📍 Город: <b>{CITY[s['city']]}</b>\n"
+        f"🏷 Тип: <b>{DEAL[s['deal']]}</b>\n"
         f"❔ Без цены: <b>{'показывать' if s['noprice'] == '1' else 'скрывать'}</b>"
     )

@@ -12,6 +12,11 @@ def passes(l: dict, s: dict) -> bool:
         pmin, pmax = int(s["pmin"]), int(s["pmax"])
         if price < pmin or (pmax and price > pmax):
             return False
+    amin, amax = int(s["amin"]), int(s["amax"])
+    if amin or amax:
+        a = l["area"]
+        if a is None or a < amin or (amax and a > amax):
+            return False
     if s["rooms"] != "any":
         r = l["rooms"]
         if r is None:
