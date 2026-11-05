@@ -83,8 +83,10 @@ def kb_price(s: dict) -> InlineKeyboardMarkup:
     presets = PRICE_PRESETS.get(s["deal"])
     if not presets:
         return InlineKeyboardMarkup([[InlineKeyboardButton("◀️ Назад", callback_data="m:back")]])
-    cur = (int(s["pmin"]), int(s["pmax"]))
-    row = [InlineKeyboardButton(("✅ " if (a, z) == cur else "") + label, callback_data=f"p:{i}")
+    chosen = set(s["prices"].split(","))
+    last = len(presets) - 1
+    row = [InlineKeyboardButton(("✅ " if (str(i) in chosen or (i == last and s["prices"] == "any")) else "") + label,
+                                callback_data=f"p:{i}")
            for i, (label, a, z) in enumerate(presets)]
     rows = [row[i:i + 3] for i in range(0, len(row), 3)]
     rows.append([InlineKeyboardButton("◀️ Назад", callback_data="m:back")])
@@ -263,14 +265,19 @@ async def on_callback(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         else:
             db.set_setting(chat_id, parts[1], parts[2])
         if parts[1] == "deal":
-            db.set_setting(chat_id, "pmin", 0)
-            db.set_setting(chat_id, "pmax", 0)   # диапазоны цен у аренды и покупки разные
+            db.set_setting(chat_id, "prices", "any")   # диапазоны цен у аренды и покупки разные
         s = db.get_settings(chat_id)
         kb = kb_option(parts[1], s)
     elif parts[0] == "p":
-        _, a, z = PRICE_PRESETS[s["deal"]][int(parts[1])]
-        db.set_setting(chat_id, "pmin", a)
-        db.set_setting(chat_id, "pmax", z)
+        idx, last = parts[1], str(len(PRICE_PRESETS[s["deal"]]) - 1)
+        cur = [x for x in s["prices"].split(",") if x and x != "any"]
+        if idx == last:
+            cur = []
+        elif idx in cur:
+            cur.remove(idx)
+        else:
+            cur.append(idx)
+        db.set_setting(chat_id, "prices", ",".join(sorted(cur)) or "any")
         s = db.get_settings(chat_id)
         kb = kb_price(s)
     elif parts[0] == "m":

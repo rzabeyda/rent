@@ -65,9 +65,9 @@ def fmt_settings(s: dict) -> str:
     names = {"0": "студия", "1": "1", "2": "2", "3": "3+"}
     chosen = [names[x] for x in s["rooms"].split(",") if x in names]
     rooms = ", ".join(chosen) if chosen else "любое"
-    pmin, pmax = int(s["pmin"]), int(s["pmax"])
-    price = "любая" if not pmin and not pmax else (f"от ${pmin:,}".replace(",", " ") if not pmax else
-            f"${pmin:,} – ${pmax:,}".replace(",", " ") if pmin else f"до ${pmax:,}".replace(",", " "))
+    presets = PRICE_PRESETS.get(s["deal"], [])
+    labels = [presets[int(x)][0] for x in s["prices"].split(",") if x.isdigit() and int(x) < len(presets) - 1]
+    price = ", ".join(labels) if labels else "любая"
     iv = int(s["interval"])
     interval = f"{iv // 60} ч" if iv >= 60 else f"{iv} мин"
     return (

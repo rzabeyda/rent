@@ -11,8 +11,7 @@ _conn = None
 DEFAULTS = {
     "deal": "rent",       # rent / sale / any
     "city": "all",        # hrg / ssh / all
-    "pmin": "0",          # USD (аренда — в месяц), 0 = без ограничения
-    "pmax": "0",
+    "prices": "any",      # выбранные диапазоны цены (индексы пресетов), any = любая
     "rooms": "any",       # 0 (студия) / 1 / 2 / 3 (3+) / any
     "age": "7",           # дней
     "interval": "360",    # минут между уведомлениями

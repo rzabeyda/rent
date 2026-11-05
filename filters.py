@@ -1,3 +1,6 @@
+from formatter import PRICE_PRESETS
+
+
 def passes(l: dict, s: dict) -> bool:
     deal = s["deal"]
     if deal != "any" and l["deal"] not in (deal, "both"):
@@ -5,9 +8,10 @@ def passes(l: dict, s: dict) -> bool:
     if s["city"] != "all" and l["city"] != s["city"]:
         return False
     price = l["price_usd"]
-    if price is not None:
-        pmin, pmax = int(s["pmin"]), int(s["pmax"])
-        if price < pmin or (pmax and price > pmax):
+    if price is not None and s["prices"] != "any":
+        presets = PRICE_PRESETS.get(deal, [])
+        ranges = [presets[int(i)][1:] for i in s["prices"].split(",") if i.isdigit() and int(i) < len(presets)]
+        if ranges and not any(price >= a and (not z or price <= z) for a, z in ranges):
             return False
     if s["rooms"] != "any":
         r = l["rooms"]
