@@ -25,7 +25,7 @@ import config
 import database as db
 import sources
 from filters import passes
-from formatter import fmt_listing, fmt_settings, PRICE_PRESETS, AREA_PRESETS
+from formatter import fmt_listing, fmt_settings, PRICE_PRESETS
 
 logging.basicConfig(
     level=logging.INFO,
@@ -54,7 +54,6 @@ OPTIONS = {
     "rooms": ("🛏 Комнаты", [("Студия", "0"), ("1", "1"), ("2", "2"), ("3+", "3"), ("Любое", "any")]),
     "age": ("🕒 Давность", [("1 день", "1"), ("3 дня", "3"), ("7 дней", "7"), ("30 дней", "30")]),
     "interval": ("⏱ Интервал", [("1 ч", "60"), ("3 ч", "180"), ("6 ч", "360"), ("24 ч", "1440")]),
-    "noprice": ("❔ Без цены", [("Показывать", "1"), ("Скрывать", "0")]),
 }
 
 
@@ -63,18 +62,8 @@ def kb_settings() -> InlineKeyboardMarkup:
         return InlineKeyboardButton(OPTIONS[key][0], callback_data=f"m:{key}")
     return InlineKeyboardMarkup([
         [b("interval"), b("age"), InlineKeyboardButton("💰 Цена", callback_data="m:price")],
-        [b("rooms"), InlineKeyboardButton("📐 Площадь", callback_data="m:area"), b("city")],
-        [b("deal"), b("noprice")],
+        [b("rooms"), b("city"), b("deal")],
     ])
-
-
-def kb_area(s: dict) -> InlineKeyboardMarkup:
-    cur = (int(s["amin"]), int(s["amax"]))
-    row = [InlineKeyboardButton(("✅ " if (a, z) == cur else "") + label + ("" if label == "Любая" else " м²"),
-                                callback_data=f"a:{i}") for i, (label, a, z) in enumerate(AREA_PRESETS)]
-    rows = [row[i:i + 3] for i in range(0, len(row), 3)]
-    rows.append([InlineKeyboardButton("◀️ Назад", callback_data="m:back")])
-    return InlineKeyboardMarkup(rows)
 
 
 def kb_option(key: str, s: dict) -> InlineKeyboardMarkup:
@@ -271,18 +260,10 @@ async def on_callback(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         db.set_setting(chat_id, "pmax", z)
         s = db.get_settings(chat_id)
         kb = kb_price(s)
-    elif parts[0] == "a":
-        _, a, z = AREA_PRESETS[int(parts[1])]
-        db.set_setting(chat_id, "amin", a)
-        db.set_setting(chat_id, "amax", z)
-        s = db.get_settings(chat_id)
-        kb = kb_area(s)
     elif parts[0] == "m":
         key = parts[1]
         if key == "back":
             kb = kb_settings()
-        elif key == "area":
-            kb = kb_area(s)
         elif key == "price":
             kb = kb_price(s)
             if s["deal"] not in PRICE_PRESETS:

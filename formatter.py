@@ -10,12 +10,9 @@ SYM = {"USD": "$", "EUR": "€", "GBP": "£", "EGP": "EGP"}
 PERIOD = {"day": "/сутки", "month": "/мес"}
 
 PRICE_PRESETS = {
-    "rent": [("до $300", 0, 300), ("$300–600", 300, 600), ("$600–1000", 600, 1000), ("$1000+", 1000, 0), ("Любая", 0, 0)],
+    "rent": [("$0–150", 0, 150), ("$150–300", 150, 300), ("$300–500", 300, 500), ("$500+", 500, 0), ("Любая", 0, 0)],
     "sale": [("до $30k", 0, 30000), ("$30–60k", 30000, 60000), ("$60–100k", 60000, 100000), ("$100k+", 100000, 0), ("Любая", 0, 0)],
 }
-
-
-AREA_PRESETS = [("до 40", 0, 40), ("40–70", 40, 70), ("70–100", 70, 100), ("100+", 100, 0), ("Любая", 0, 0)]
 
 
 def money(v: float, cur: str) -> str:
@@ -71,17 +68,12 @@ def fmt_settings(s: dict) -> str:
             f"${pmin:,} – ${pmax:,}".replace(",", " ") if pmin else f"до ${pmax:,}".replace(",", " "))
     iv = int(s["interval"])
     interval = f"{iv // 60} ч" if iv >= 60 else f"{iv} мин"
-    amin, amax = int(s["amin"]), int(s["amax"])
-    area = "любая" if not amin and not amax else (f"от {amin} м²" if not amax else
-           f"{amin}–{amax} м²" if amin else f"до {amax} м²")
     return (
         "⚙️ <b>Настройки фильтров</b>\n\n"
         f"⏱ Интервал: <b>{interval}</b>\n"
         f"🕒 Давность: <b>{s['age']} дн.</b>\n"
         f"💰 Цена: <b>{price}</b>\n"
         f"🛏 Комнат: <b>{rooms}</b>\n"
-        f"📐 Площадь: <b>{area}</b>\n"
         f"📍 Город: <b>{CITY[s['city']]}</b>\n"
-        f"🏷 Тип: <b>{DEAL[s['deal']]}</b>\n"
-        f"❔ Без цены: <b>{'показывать' if s['noprice'] == '1' else 'скрывать'}</b>"
+        f"🏷 Тип: <b>{DEAL[s['deal']]}</b>"
     )

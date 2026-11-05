@@ -5,17 +5,9 @@ def passes(l: dict, s: dict) -> bool:
     if s["city"] != "all" and l["city"] != s["city"]:
         return False
     price = l["price_usd"]
-    if price is None:
-        if s["noprice"] != "1":
-            return False
-    else:
+    if price is not None:
         pmin, pmax = int(s["pmin"]), int(s["pmax"])
         if price < pmin or (pmax and price > pmax):
-            return False
-    amin, amax = int(s["amin"]), int(s["amax"])
-    if amin or amax:
-        a = l["area"]
-        if a is None or a < amin or (amax and a > amax):
             return False
     if s["rooms"] != "any":
         r = l["rooms"]
