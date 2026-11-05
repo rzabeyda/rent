@@ -144,6 +144,12 @@ def sent_keys(chat_id):
     return {r["id"] for r in rows}, {r["hash"] for r in rows}
 
 
+def sent_texts(chat_id):
+    with _lock:
+        return [r["text"] for r in _conn.execute(
+            "SELECT l.text FROM sent s JOIN listings l ON l.id = s.id WHERE s.chat_id=?", (chat_id,))]
+
+
 def mark_sent(chat_id, l):
     with _lock:
         _conn.execute("INSERT OR IGNORE INTO sent(chat_id,id,hash) VALUES(?,?,?)", (chat_id, l["id"], l["hash"]))

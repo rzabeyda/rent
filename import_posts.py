@@ -12,8 +12,11 @@ db.init_db()
 now = datetime.now(timezone.utc).isoformat()
 items = []
 for p in json.load(open(sys.argv[1], encoding="utf-8")):
+    d = P.post_date(p["text"])
+    if d and (datetime.now(timezone.utc) - d).days > 120:
+        continue                         # старый пост
     info = P.parse(p["text"], p.get("city", "hrg"))
     if info:
         items.append({"id": p["id"], "source": re.sub(r"\(\d+\)\s*", "", p["source"]), "text": p["text"], "url": p["url"],
-                      "ts": p.get("ts", now), "photo": None, **info})
+                      "ts": d.isoformat() if d else p.get("ts", now), "photo": None, **info})
 print("разобрано:", len(items), "новых:", db.save_listings(items))

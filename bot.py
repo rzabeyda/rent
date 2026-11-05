@@ -23,6 +23,7 @@ from telegram.ext import (Application, CommandHandler, CallbackQueryHandler, Mes
 from telegram.error import Forbidden, BadRequest
 
 import config
+import ad_parser as P
 import database as db
 import sources
 import translate
@@ -127,11 +128,15 @@ def pick_for_user(chat_id: int, s: dict, only_new: bool) -> list:
     if only_new:
         ids, hashes = db.sent_keys(chat_id)
         items = [l for l in items if l["id"] not in ids and l["hash"] not in hashes]
-    seen, out = set(), []
-    for l in items:                      # убираем дубли-репосты, новые первыми
-        if l["hash"] not in seen:
-            seen.add(l["hash"])
-            out.append(l)
+    out, kept = [], []
+    if only_new:
+        kept = [P.words(x) for x in db.sent_texts(chat_id)]       # уже присланное тоже считаем дублями
+    for l in items:                      # убираем репосты и дубли из разных групп, новые первыми
+        w = P.words(l["text"])
+        if any(P.similar(w, k) for k in kept):
+            continue
+        kept.append(w)
+        out.append(l)
     priced = [l for l in out if l["price_usd"] is not None]
     if len(priced) >= 10:                # хватает объявлений с ценой — без цены не показываем
         return priced

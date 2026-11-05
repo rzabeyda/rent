@@ -55,7 +55,7 @@ def find_price(text: str, deal: str):
                 continue
             cur = _cur(m.group("cur"))
             usd = fx.to_usd(v, cur)
-            if usd < 5 or usd > 20_000_000:
+            if usd < 20 or usd > 20_000_000:
                 continue
             ctx = text[max(0, m.start() - 40):m.start()]
             tail = text[m.end():m.end() + 25]
@@ -78,8 +78,17 @@ def find_price(text: str, deal: str):
     return v, cur, period, usd_norm
 
 
+WORD_NUM = {"одн": 1, "один": 1, "двух": 2, "две": 2, "два": 2, "трех": 3, "трёх": 3, "три": 3, "четыр": 4,
+            "one": 1, "two": 2, "three": 3, "four": 4}
+
+
 def find_rooms(text: str):
     t = text.lower()
+    m = re.search(r"(одн\w*|двух\w*|трех\w*|трёх\w*|четыр\w*|one|two|three|four)[ -]*(?:комнатн|спальн|bed|br)", t)
+    if m:
+        for k, v in WORD_NUM.items():
+            if m.group(1).startswith(k):
+                return v
     if re.search(r"студи|studio", t):
         return 0
     m = re.search(r"(\d)\s*\+\s*\d", t)
@@ -147,3 +156,39 @@ def parse(text: str, city_hint: str = ""):
         "area": find_area(text),
         "hash": hashlib.md5(re.sub(r"\W+", "", text.lower())[:300].encode()).hexdigest(),
     }
+
+
+MONTHS = {"янв": 1, "фев": 2, "мар": 3, "апр": 4, "май": 5, "мая": 5, "июн": 6, "июл": 7, "авг": 8,
+          "сен": 9, "окт": 10, "ноя": 11, "дек": 12}
+RX_DATE = re.compile(r"(\d{1,2})\s+(янв|фев|мар|апр|ма[йя]|июн|июл|авг|сен|окт|ноя|дек)\w*\s+(\d{4})", re.I)
+
+
+def post_date(text: str):
+    """Дата поста из текста (Facebook пишет «Четверг, 5 ноябрь 2026 г.»). None, если нет."""
+    from datetime import datetime, timezone
+    m = RX_DATE.search(text[:400])
+    if not m:
+        return None
+    try:
+        return datetime(int(m.group(3)), MONTHS[m.group(2).lower()[:3]], int(m.group(1)), tzinfo=timezone.utc)
+    except (ValueError, KeyError):
+        return None
+
+
+def dedup_key(text: str) -> str:
+    """Ключ для репостов: самая длинная строка поста (заголовки и имена авторов отбрасываем)."""
+    lines = [re.sub(r"\W+", "", ln.lower()) for ln in re.split(r"[\n.!]+", text)]
+    longest = max(lines, key=len) if lines else ""
+    return hashlib.md5(longest[:90].encode()).hexdigest()
+
+
+
+def words(text: str) -> frozenset:
+    return frozenset(re.findall(r"\w{5,}", text.lower()))
+
+
+def similar(a: frozenset, b: frozenset) -> bool:
+    """Репост/дубль: почти все значимые слова меньшего текста есть в большем."""
+    if not a or not b:
+        return False
+    return len(a & b) / min(len(a), len(b)) >= 0.7
