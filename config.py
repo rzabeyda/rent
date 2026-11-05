@@ -24,6 +24,7 @@ DEFAULT_CHANNELS = [
     ("arendaegipet", ""),
     ("hurghadaapartment", "hrg"),
     ("hurgadarent", "hrg"),
+    ("hurghadarent8", "hrg"),
     ("propertyegypt", ""),
     ("hurgadahomes", "hrg"),
     ("egyptowner", ""),
