@@ -7,6 +7,7 @@ import logging
 import os
 import re
 import time
+from pathlib import Path
 from logging.handlers import RotatingFileHandler
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -25,6 +26,7 @@ import config
 import database as db
 import sources
 import translate
+import tg_user
 from filters import passes
 from formatter import fmt_listing, fmt_settings, PRICE_PRESETS
 
@@ -100,7 +102,7 @@ async def send_listing(bot, chat_id: int, l: dict):
     body = l["text"][:700]
     l["text"] = await asyncio.to_thread(translate.to_ru, body)   # всегда на русском
     text = fmt_listing(l)
-    photos = (l["photo"] or "").split()
+    photos = [Path(p[5:]) if p.startswith("file:") else p for p in (l["photo"] or "").split()]
     try:
         if len(photos) == 1 and len(text) <= 1024:
             await bot.send_photo(chat_id, photos[0], caption=text, parse_mode=ParseMode.HTML)
@@ -176,6 +178,10 @@ async def scrape_once(pages: int = 1):
         except Exception as e:
             log.warning("scrape %s failed: %s", name, e)
         await asyncio.sleep(1)
+    try:
+        total += db.save_listings(await tg_user.fetch())
+    except Exception as e:
+        log.warning("tg_user failed: %s", e)
     log.info("scrape done: %d new listings", total)
     return total
 
@@ -216,6 +222,7 @@ async def notify_loop(app: Application):
 
 
 async def post_init(app: Application):
+    await tg_user.start()
     _tasks.append(asyncio.create_task(scrape_loop()))
     _tasks.append(asyncio.create_task(notify_loop(app)))
 
