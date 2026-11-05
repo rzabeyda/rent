@@ -41,8 +41,7 @@ def init_db():
         cols = [r["name"] for r in _conn.execute("PRAGMA table_info(listings)")]
         if "area" not in cols:
             _conn.execute("ALTER TABLE listings ADD COLUMN area INTEGER")
-        if not _conn.execute("SELECT 1 FROM channels LIMIT 1").fetchone():
-            _conn.executemany("INSERT OR IGNORE INTO channels(name, city) VALUES(?,?)", config.DEFAULT_CHANNELS)
+        _conn.executemany("INSERT OR IGNORE INTO channels(name, city) VALUES(?,?)", config.DEFAULT_CHANNELS)
         _conn.commit()
 
 

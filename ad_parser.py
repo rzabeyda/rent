@@ -106,7 +106,13 @@ def find_area(text: str):
     return round(v) if 10 <= v <= 2000 else None
 
 
+RX_HOUSING = re.compile(r"квартир|студи|апартамент|вилл|дом|жиль|комнат|спальн|таунхаус|пентхаус|дуплекс|комплекс|недвижим|"
+                        r"apartment|flat|villa|studio|bedroom|bed|room|townhouse|penthouse|duplex|compound|property|real estate", re.I)
+
+
 def parse(text: str, city_hint: str = ""):
+    if not RX_HOUSING.search(text):
+        return None   # не жильё (барахолка, реклама)
     rent = bool(RX_RENT.search(text))
     sale = bool(RX_SALE.search(text))
     deal = "both" if rent and sale else "rent" if rent else "sale" if sale else ""

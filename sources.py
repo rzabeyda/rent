@@ -41,11 +41,11 @@ def fetch_channel(name: str, city_hint: str = "", pages: int = 1) -> list:
             info = P.parse(text, city_hint)
             if not info:
                 continue
-            ph = RX_PHOTO.search(b)
+            photos = RX_PHOTO.findall(b)
             out.append({
                 "id": post.group(1), "source": name, "text": text,
                 "url": f"https://t.me/{post.group(1)}", "ts": dt.group(1),
-                "photo": ph.group(1) if ph else None, **info,
+                "photo": " ".join(photos[:10]) or None, **info,
             })
         if not ids:
             break

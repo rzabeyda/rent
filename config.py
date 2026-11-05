@@ -17,6 +17,13 @@ MAX_PER_SEND = 10             # максимум объявлений за од�
 # Публичные Telegram-каналы (username, город по умолчанию). Можно добавлять командой /add
 DEFAULT_CHANNELS = [
     ("arenda_sharm", "ssh"),
+    ("sharmelsheikh_rent", "ssh"),
+    ("sharmelsheikhproperty", "ssh"),
+    ("hurghada_market", "hrg"),
+    ("hurghadaproperty", "hrg"),
+    ("arendaegipet", ""),
+    ("hurghadaapartment", "hrg"),
+    ("hurgadarent", "hrg"),
     ("sharm_property", "ssh"),
     ("hurghada_nedvizhimost", "hrg"),
     ("hurghada_apartments", "hrg"),

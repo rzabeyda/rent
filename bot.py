@@ -14,7 +14,7 @@ os.chdir(BASE_DIR)
 os.makedirs("data", exist_ok=True)
 os.makedirs("logs", exist_ok=True)
 
-from telegram import (Update, InlineKeyboardButton, InlineKeyboardMarkup,
+from telegram import (Update, InlineKeyboardButton, InlineKeyboardMarkup, InputMediaPhoto,
                       ReplyKeyboardMarkup, KeyboardButton)
 from telegram.constants import ParseMode
 from telegram.ext import (Application, CommandHandler, CallbackQueryHandler, MessageHandler,
@@ -24,6 +24,7 @@ from telegram.error import Forbidden, BadRequest
 import config
 import database as db
 import sources
+import translate
 from filters import passes
 from formatter import fmt_listing, fmt_settings, PRICE_PRESETS
 
@@ -95,14 +96,24 @@ def kb_price(s: dict) -> InlineKeyboardMarkup:
 
 # ══════════ отправка ═════════════════════════════════════════════
 async def send_listing(bot, chat_id: int, l: dict):
+    l = dict(l)
+    body = l["text"][:700]
+    l["text"] = await asyncio.to_thread(translate.to_ru, body)   # всегда на русском
     text = fmt_listing(l)
+    photos = (l["photo"] or "").split()
     try:
-        if l["photo"] and len(text) <= 1024:
-            await bot.send_photo(chat_id, l["photo"], caption=text, parse_mode=ParseMode.HTML)
+        if len(photos) == 1 and len(text) <= 1024:
+            await bot.send_photo(chat_id, photos[0], caption=text, parse_mode=ParseMode.HTML)
             return
-    except (BadRequest, Forbidden) as e:
-        if isinstance(e, Forbidden):
-            raise
+        if len(photos) > 1:
+            cap = text if len(text) <= 1024 else None
+            media = [InputMediaPhoto(p, caption=cap if i == 0 else None, parse_mode=ParseMode.HTML)
+                     for i, p in enumerate(photos[:10])]
+            await bot.send_media_group(chat_id, media)
+            if cap:
+                return
+    except Forbidden:
+        raise
     except Exception as e:
         log.warning("photo failed: %s", e)
     await bot.send_message(chat_id, text, parse_mode=ParseMode.HTML, disable_web_page_preview=True)
