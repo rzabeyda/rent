@@ -110,7 +110,17 @@ RX_HOUSING = re.compile(r"квартир|студи|апартамент|вил�
                         r"apartment|flat|villa|studio|bedroom|bed|room|townhouse|penthouse|duplex|compound|property|real estate", re.I)
 
 
+RX_WANTED = re.compile(r"(ищу|ищем|сниму|снимем|куплю|куплю|нужна|нужен|требуется|looking for|i need|we need|wanted|searching for|want to rent|want to buy)", re.I)
+
+
+def is_wanted(text: str) -> bool:
+    """Объявление «ищу квартиру» — не предложение."""
+    return bool(RX_WANTED.search(text[:180]))
+
+
 def parse(text: str, city_hint: str = ""):
+    if is_wanted(text):
+        return None
     if not RX_HOUSING.search(text):
         return None   # не жильё (барахолка, реклама)
     rent = bool(RX_RENT.search(text))

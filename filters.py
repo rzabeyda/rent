@@ -1,7 +1,10 @@
 from formatter import PRICE_PRESETS
+from ad_parser import is_wanted
 
 
 def passes(l: dict, s: dict) -> bool:
+    if is_wanted(l["text"]):
+        return False
     deal = s["deal"]
     if deal != "any" and l["deal"] not in (deal, "both"):
         return False
